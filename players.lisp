@@ -56,7 +56,7 @@
 	)
 	(defparameter *preflopOffSuitmatrix* (readWinChanceMatrix #P"preflopChances/offSuit.csv"))
 	(defparameter *preflopOnSuitmatrix* (readWinChanceMatrix #P"preflopChances/onSuit.csv"))
-	(defun mapranktoindex (rank)
+	(defun mapranktoindex (rank) ; convert card rank format to ascending by value
 		(if (equal rank 1)
 			0
 		(- 13 (- rank 1))
