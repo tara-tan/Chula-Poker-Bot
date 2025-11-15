@@ -29,9 +29,9 @@ Suggestions:
 
 
 Assawa:
-
+probability table is shamelessly stolen from https://www.reddit.com/r/poker/comments/6phynz/quick_preflop_odds_reference/
 To run this code,
 
 1. install quicklisp & Alive
 
-2. install default packages in quicklisp along with "cl-csv"
+2. install default packages in quicklisp along with "cl-csv" and "parse-float"
