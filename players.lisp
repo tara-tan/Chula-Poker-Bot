@@ -12,6 +12,7 @@
 ;All your code goes into this file
 
 (ql:quickload "cl-csv")
+(ql:quickload :parse-float)
 (let
 	(
 		;"hand" is a list of length 2
@@ -29,17 +30,38 @@
 	(defun AI-set-hand (cards)
 		(setf hand cards)
 	)
-	(defun readWinChanceMatrix (path) 
-		(let ((input-table (cl-csv:read-csv path)))
-		(format t "Read ~A rows from ~A~%" (length input-table) path)
-		input-table)
-	)
 	(defun AI-get-hand ()
 		hand
 	)
 	;	This function will be called by the game engine at every
 	;		decision point
 	; Your main logic goes here
+	(defun readWinChanceMatrix (path) 
+		(let 
+			((input-table (cl-csv:read-csv path)))
+			
+			(format t "Read ~A rows from ~A~%" (length input-table) path)
+			(mapcar
+				(lambda (row)
+					(mapcar
+						(lambda (x)
+							(parse-float:parse-float x)
+						)
+						row
+					)
+				)
+				input-table
+			)
+		)
+	)
+	(defparameter *preflopOffSuitmatrix* (readWinChanceMatrix #P"preflopChances/offSuit.csv"))
+	(defparameter *preflopOnSuitmatrix* (readWinChanceMatrix #P"preflopChances/onSuit.csv"))
+	(defun mapranktoindex (rank)
+		(if (equal rank 1)
+			0
+		(- 13 (- rank 1))
+		)
+	)
 	(defun AI
 		(
 			;list of cards on the table; may be empty
@@ -47,9 +69,6 @@
 			;game state (our chips and bet, other players' chips and bet); see game engine for explanation of format
 			game-state
 		)
-			;set up global constants for bot logic
-		(defparameter *preflopOffSuitmatrix* (readWinChanceMatrix #P"preflopChances/offSuit.csv"))
-		(defparameter *preflopOnSuitmatrix* (readWinChanceMatrix #P"preflopChances/onSuit.csv"))
 		(let
 			(
 				;our current state: chips, current bet
@@ -69,7 +88,54 @@
 			;	 "`in" (check or call current max bet)
 			;  "`fold" (give up in this round)
 			;	 "integer" (any integer value, raising the bet)
-			`in
+			(if (equal (length cards-on-table) 0)
+				;this means we're in pre-flop
+				( let*
+					(
+						(card1 (nth 0 hand))
+						(card2 (nth 1 hand))
+						; check suited
+						(suited (equal (nth 1 card1) (nth 1 card2)))
+						; check ranks 
+						; Provided rank mapping is 1-13 (A to K)
+						; we will convert this to 0-12 (A to 2) to sort by value ascending
+						(rank1 (mapranktoindex (nth 0 card1)))
+						(rank2 (mapranktoindex (nth 0 card2)))
+						;win chance from preflop matrix
+						(win-chance 
+							(if suited
+								(nth rank2
+										(nth rank1 *preflopOnSuitmatrix*))
+								(nth rank2 
+										(nth rank1 *preflopOffSuitmatrix*))
+								)
+							)
+						)
+					;simple logic based on win chance (if our hands are above average)
+					(format t "Preflop: card1: ~A, card2: ~A, suited: ~A, rank1: ~A, rank2: ~A, win-chance: ~A" 
+						card1 card2 suited rank1 rank2 win-chance)
+					(cond 
+						((> win-chance 30.0) 
+							;strong hand, raise big blind (40)
+							(if (>= (nth 1 state) 40)
+								40
+								(nth 1 state)
+							)
+						)
+						((> win-chance 25.0) 
+							;average hand, just call
+							`in
+						)
+						((<= win-chance 25.0) 
+							; abysmal dogshit (below average hand), fold
+							`fold
+						)
+					)
+				)
+				;post-flop logic goes here
+				;for now, just always in
+				`in
+			)
 		)
 	)
 )

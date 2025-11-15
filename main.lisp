@@ -73,3 +73,25 @@
 	)
 )
 
+;tests one round WITH AI
+(defun test-round-AI ()
+	(game-round
+		;initial game state, for 4 players
+		(list 
+			(list `noob1 1000 0 `in)
+			(list `noob2 1000 0 `in)
+			(list `noob3 1000 0 `in)
+      		(list `AI    1000 0 `in)
+		)
+		;list of players "set-hand" function to deal cards 
+		(list 
+      `noob1-set-hand `noob2-set-hand 
+      `noob3-set-hand `AI-set-hand
+    )
+		;list of players "get-hand" function to determine winner
+		(list 
+      `noob1-get-hand `noob2-get-hand 
+       `noob3-get-hand `AI-get-hand
+    )
+	)
+)
