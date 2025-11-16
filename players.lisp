@@ -13,6 +13,7 @@
 
 (ql:quickload "cl-csv")
 (ql:quickload :parse-float)
+(ql:quickload 'inferior-shell)
 (let
 	(
 		;"hand" is a list of length 2
@@ -62,6 +63,9 @@
 		(- 13 (- rank 1))
 		)
 	)
+	(defun get-card-symbol (n)
+	(nth (- n 1) (list #\A 2 3 4 5 6 7 8 9 10 #\J #\Q #\K))
+)
 	(defun AI
 		(
 			;list of cards on the table; may be empty
@@ -134,7 +138,18 @@
 				)
 				;post-flop logic goes here
 				;for now, just always in
-				`in
+				(  
+					let*
+					(
+						(card1 (nth 0 hand))
+						(card2 (nth 1 hand))
+						
+						(win-chance (inferior-shell:run/s `(./rankCalc.sh --hand ,(concatenate 'string (format nil "~A" (get-card-symbol (nth 0 card1))) (format nil "~A"  (nth 1 card1)) (format nil "~A"  (get-card-symbol (nth 0 card2))) (format nil "~A" (nth 1 card2))))))
+					)
+					(format t "Postflop: card1: ~A, card2: ~A, win-chance: ~A" 
+						card1 card2 win-chance)
+					`in
+				)
 			)
 		)
 	)

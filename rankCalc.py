@@ -49,7 +49,7 @@ def sim(evaluator,board,hand,returnDict,procID,rounds=100000,opponents=3):
     if opponents == 0 :
         returnDict[procID]=score/rounds
     else:
-        print("Process {} finished. simulations completed: {}, errors encountered: {}, losses: {}".format(procID, count, errorCount, roundLost ))
+        # print("Process {} finished. simulations completed: {}, errors encountered: {}, losses: {}".format(procID, count, errorCount, roundLost ))
         returnDict[procID]=((rounds - roundLost)/rounds)
 
 
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     argparser.add_argument('--hand', type=str, required=True, help='Hand cards in format AcAd')
     argparser.add_argument('--board', type=str, required=False, help='Board cards in format KcQsJh')
     args = argparser.parse_args()
-    handCards = [Card.new(args.hand[i:i+2]) for i in range(0, len(args.hand), 2)]
+    handCards = [Card.new(args.hand[i:i+2].capitalize()) for i in range(0, len(args.hand), 2)]
     boardCards = []
     if args.board:
         boardCards = [Card.new(args.board[i:i+2]) for i in range(0, len(args.board), 2)]
