@@ -1,3 +1,5 @@
+Github : https://github.com/tara-tan/Chula-Poker-Bot.git
+
 ## Files:
 	"poker.lisp": main game engine. You do not need to modify nor read this file, unless you're looking for more details on the game state format.
 	

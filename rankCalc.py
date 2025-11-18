@@ -2,6 +2,7 @@ import time
 from treys import Card, Evaluator, Deck
 from multiprocessing import cpu_count, Process, Manager
 import argparse
+import json, os, sys 
 numProcesses = 12
 deck = Deck()
 evaluator = Evaluator()
@@ -58,11 +59,36 @@ if __name__ == "__main__":
     argparser.add_argument('--hand', type=str, required=True, help='Hand cards in format AcAd')
     argparser.add_argument('--board', type=str, required=False, help='Board cards in format KcQsJh')
     args = argparser.parse_args()
-    handCards = [Card.new(args.hand[i:i+2].capitalize()) for i in range(0, len(args.hand), 2)]
+
+    cache_path = os.path.join(os.path.dirname(__file__), "cache.json") if "__file__" in globals() else "cache.json"
+    cache = {}
+    try:
+        if os.path.exists(cache_path):
+            with open(cache_path, "r") as fh:
+                try:
+                    data = json.load(fh)
+                    if isinstance(data, dict):
+                        cache = data
+                except json.JSONDecodeError:
+                    cache = {}
+    except Exception:
+        cache = {}
+    
+    if ''.join((args.hand + (args.board if args.board else ''))) in cache:
+        print(cache[''.join((args.hand + (args.board if args.board else '')))])
+        sys.exit(0)
+
+    def processCapitals(s):
+        first = s[0].upper()
+        second = s[1].lower()
+        return first + second
+    mainDeck = Deck()
+    handCards = [Card.new(processCapitals((args.hand[i:i+2]))) if processCapitals((args.hand[i:i+2])) != 'Xx' 
+                 else mainDeck.draw(1)[0]
+                  for i in range(0, len(args.hand), 2)]
     boardCards = []
     if args.board:
-        boardCards = [Card.new(args.board[i:i+2]) for i in range(0, len(args.board), 2)]
-
+        boardCards = [Card.new(processCapitals((args.board[i:i+2]))) for i in range(0, len(args.board), 2)]
     # Card.print_pretty_cards(boardCards)
     # Card.print_pretty_cards(handCards)
 
@@ -71,7 +97,7 @@ if __name__ == "__main__":
     start = time.time()
     processes = []
     for i in range(numProcesses):
-        processes.append(Process(target=sim, args=(Evaluator(),boardCards,handCards ,return_dict,i,100000//numProcesses))) 
+        processes.append(Process(target=sim, args=(Evaluator(),boardCards,handCards ,return_dict,i,10000//numProcesses))) 
         # take around 0.4 seconds on 12 cores
         # with 3 opponents, takes around 0.7 seconds on 12 cores
         processes[i].start()
@@ -85,5 +111,17 @@ if __name__ == "__main__":
     # print(f"results: {return_dict}")
     print((sum(return_dict.values())/numProcesses)) # average score form mc out of 7402
 
+    cache[''.join((args.hand + (args.board if args.board else '')))] = (sum(return_dict.values())/numProcesses)
+    try:
+        dirpath = os.path.dirname(cache_path)
+        if dirpath and not os.path.exists(dirpath):
+            os.makedirs(dirpath, exist_ok=True)
+        if not os.path.exists(cache_path):
+            with open(cache_path, "w") as fh2:
+                fh2.write("{}")
+        with open(cache_path, "w") as fh:
+            json.dump(cache, fh)
+    except Exception:
+        pass    
 
 # example call: python rankCalc.py --hand AcAs
